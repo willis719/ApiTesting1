@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "meta": null,
+      "data": {
+        "id": 2524,
+        "user_id": 2628,
+        "title": "Take out trash",
+        "due_on": "2022-01-02T00:00:00.000+05:30",
+        "status": "completed"
+      }
+    }
+  ],
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$id": "#/properties/meta",
+      "type": "null",
+      "title": "The meta schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": null,
+      "examples": [
+        null
+      ]
+    },
+    "data": {
+      "$id": "#/properties/data",
+      "type": "object",
+      "title": "The data schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": {},
+      "examples": [
+        {
+          "id": 2524,
+          "user_id": 2628,
+          "title": "Take out trash",
+          "due_on": "2022-01-02T00:00:00.000+05:30",
+          "status": "completed"
+        }
+      ],
+      "required": [
+        "id",
+        "user_id",
+        "title",
+        "due_on",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "$id": "#/properties/data/properties/id",
+          "type": "integer",
+          "title": "The id schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            2524
+          ]
+        },
+        "user_id": {
+          "$id": "#/properties/data/properties/user_id",
+          "type": "integer",
+          "title": "The user_id schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            2628
+          ]
+        },
+        "title": {
+          "$id": "#/properties/data/properties/title",
+          "type": "string",
+          "title": "The title schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "Take out trash"
+          ]
+        },
+        "due_on": {
+          "$id": "#/properties/data/properties/due_on",
+          "type": "string",
+          "title": "The due_on schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "2022-01-02T00:00:00.000+05:30"
+          ]
+        },
+        "status": {
+          "$id": "#/properties/data/properties/status",
+          "type": "string",
+          "title": "The status schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "completed"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

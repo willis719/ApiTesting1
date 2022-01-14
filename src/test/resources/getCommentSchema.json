@@ -1,0 +1,291 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "meta": {
+        "pagination": {
+          "total": 1,
+          "pages": 1,
+          "page": 1,
+          "limit": 20,
+          "links": {
+            "previous": null,
+            "current": "https://gorest.co.in/public/v1/comments?page=1",
+            "next": null
+          }
+        }
+      },
+      "data": [
+        {
+          "id": 1772,
+          "post_id": 1851,
+          "name": "Josh Looper",
+          "email": "Josh@example.com",
+          "body": "Best Quarterback to ever play the game"
+        }
+      ]
+    }
+  ],
+  "required": [
+    "meta",
+    "data"
+  ],
+  "properties": {
+    "meta": {
+      "$id": "#/properties/meta",
+      "type": "object",
+      "title": "The meta schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": {},
+      "examples": [
+        {
+          "pagination": {
+            "total": 1,
+            "pages": 1,
+            "page": 1,
+            "limit": 20,
+            "links": {
+              "previous": null,
+              "current": "https://gorest.co.in/public/v1/comments?page=1",
+              "next": null
+            }
+          }
+        }
+      ],
+      "required": [
+        "pagination"
+      ],
+      "properties": {
+        "pagination": {
+          "$id": "#/properties/meta/properties/pagination",
+          "type": "object",
+          "title": "The pagination schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": {},
+          "examples": [
+            {
+              "total": 1,
+              "pages": 1,
+              "page": 1,
+              "limit": 20,
+              "links": {
+                "previous": null,
+                "current": "https://gorest.co.in/public/v1/comments?page=1",
+                "next": null
+              }
+            }
+          ],
+          "required": [
+            "total",
+            "pages",
+            "page",
+            "limit",
+            "links"
+          ],
+          "properties": {
+            "total": {
+              "$id": "#/properties/meta/properties/pagination/properties/total",
+              "type": "integer",
+              "title": "The total schema",
+              "description": "An explanation about the purpose of this instance.",
+              "default": 0,
+              "examples": [
+                1
+              ]
+            },
+            "pages": {
+              "$id": "#/properties/meta/properties/pagination/properties/pages",
+              "type": "integer",
+              "title": "The pages schema",
+              "description": "An explanation about the purpose of this instance.",
+              "default": 0,
+              "examples": [
+                1
+              ]
+            },
+            "page": {
+              "$id": "#/properties/meta/properties/pagination/properties/page",
+              "type": "integer",
+              "title": "The page schema",
+              "description": "An explanation about the purpose of this instance.",
+              "default": 0,
+              "examples": [
+                1
+              ]
+            },
+            "limit": {
+              "$id": "#/properties/meta/properties/pagination/properties/limit",
+              "type": "integer",
+              "title": "The limit schema",
+              "description": "An explanation about the purpose of this instance.",
+              "default": 0,
+              "examples": [
+                20
+              ]
+            },
+            "links": {
+              "$id": "#/properties/meta/properties/pagination/properties/links",
+              "type": "object",
+              "title": "The links schema",
+              "description": "An explanation about the purpose of this instance.",
+              "default": {},
+              "examples": [
+                {
+                  "previous": null,
+                  "current": "https://gorest.co.in/public/v1/comments?page=1",
+                  "next": null
+                }
+              ],
+              "required": [
+                "previous",
+                "current",
+                "next"
+              ],
+              "properties": {
+                "previous": {
+                  "$id": "#/properties/meta/properties/pagination/properties/links/properties/previous",
+                  "type": "null",
+                  "title": "The previous schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": null,
+                  "examples": [
+                    null
+                  ]
+                },
+                "current": {
+                  "$id": "#/properties/meta/properties/pagination/properties/links/properties/current",
+                  "type": "string",
+                  "title": "The current schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                    "https://gorest.co.in/public/v1/comments?page=1"
+                  ]
+                },
+                "next": {
+                  "$id": "#/properties/meta/properties/pagination/properties/links/properties/next",
+                  "type": "null",
+                  "title": "The next schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": null,
+                  "examples": [
+                    null
+                  ]
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "data": {
+      "$id": "#/properties/data",
+      "type": "array",
+      "title": "The data schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          {
+            "id": 1772,
+            "post_id": 1851,
+            "name": "Josh Looper",
+            "email": "Josh@example.com",
+            "body": "Best Quarterback to ever play the game"
+          }
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+        "$id": "#/properties/data/items",
+        "anyOf": [
+          {
+            "$id": "#/properties/data/items/anyOf/0",
+            "type": "object",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+              {
+                "id": 1772,
+                "post_id": 1851,
+                "name": "Josh Looper",
+                "email": "Josh@example.com",
+                "body": "Best Quarterback to ever play the game"
+              }
+            ],
+            "required": [
+              "id",
+              "post_id",
+              "name",
+              "email",
+              "body"
+            ],
+            "properties": {
+              "id": {
+                "$id": "#/properties/data/items/anyOf/0/properties/id",
+                "type": "integer",
+                "title": "The id schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": 0,
+                "examples": [
+                  1772
+                ]
+              },
+              "post_id": {
+                "$id": "#/properties/data/items/anyOf/0/properties/post_id",
+                "type": "integer",
+                "title": "The post_id schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": 0,
+                "examples": [
+                  1851
+                ]
+              },
+              "name": {
+                "$id": "#/properties/data/items/anyOf/0/properties/name",
+                "type": "string",
+                "title": "The name schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "Josh Looper"
+                ]
+              },
+              "email": {
+                "$id": "#/properties/data/items/anyOf/0/properties/email",
+                "type": "string",
+                "title": "The email schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "Josh@example.com"
+                ]
+              },
+              "body": {
+                "$id": "#/properties/data/items/anyOf/0/properties/body",
+                "type": "string",
+                "title": "The body schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "Best Quarterback to ever play the game"
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": true
+}
