@@ -1,9 +1,9 @@
 package models;
 
-public class PostResponse {
+public class TodoResponse {
 
     private String meta;
-    private CreatePostData data;
+    private CreateTodoData data;
 
     public String getMeta() {
         return meta;
@@ -13,11 +13,11 @@ public class PostResponse {
         this.meta = meta;
     }
 
-    public CreatePostData getData() {
+    public CreateTodoData getData() {
         return data;
     }
 
-    public void setData(CreatePostData data) {
+    public void setData(CreateTodoData data) {
         this.data = data;
     }
 }

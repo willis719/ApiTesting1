@@ -1,16 +1,14 @@
 package tests;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import io.restassured.RestAssured;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.module.jsv.JsonSchemaValidator;
-import models.CreatePostData;
-import models.Data;
-import models.PostResponse;
-import models.UserResponse;
+import models.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.skyscreamer.jsonassert.Customization;
@@ -21,6 +19,7 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
+import org.w3c.dom.CDATASection;
 import utils.LoadProperties;
 
 
@@ -235,8 +234,6 @@ public class GoRestTest {
         int userID = responseBody.getData().getId();
 
 
-
-
         CreatePostData postData = new CreatePostData();
         postData.setTitle("SuperBowl");
         postData.setBody("Packers beat the Chiefs 35 - 31");
@@ -280,7 +277,6 @@ public class GoRestTest {
                 .extract().response().as(UserResponse.class);
 
         // Get user id
-
         int userID = responseBody.getData().getId();
 
         // Create post
@@ -288,19 +284,19 @@ public class GoRestTest {
         createPostData.setTitle("Superbowl");
         createPostData.setBody("Packers beat the Chiefs 35 - 31");
 
-        String postResponseBody = requestSpecification.body(createPostData)
+        PostResponse postResponseBody = requestSpecification.body(createPostData)
                 .when().post("users/" + userID + "/posts")
                 .then().spec(responseSpecification).assertThat().statusCode(201).extract()
-                .response().asString();
+                .response().as(PostResponse.class);
 
         // GET POST
-        CreatePostData getPost = get("users/" + userID + "/posts")
+        PostResponse getPost = get("users/" + userID + "/posts")
                 .then().spec(responseSpecification).assertThat()
                 .statusCode(200).body(JsonSchemaValidator.matchesJsonSchemaInClasspath("listPostSchema.json"))
-                .extract().response().as(CreatePostData.class);
+                .extract().response().as(PostResponse.class);
 
         String requestJson = mapper.writeValueAsString(createPostData);
-        String responseJson = mapper.writeValueAsString(getPost.getBody());
+        String responseJson = mapper.writeValueAsString(getPost.getData());
         JSONAssert.assertEquals(requestJson, responseJson,
                 new CustomComparator(JSONCompareMode.STRICT_ORDER,
                         new Customization("id", new ValueMatcher<Object>() {
@@ -314,176 +310,230 @@ public class GoRestTest {
     }
 
     @Test
-    public void testCreateComment() {
+    public void testCreateComment() throws JsonProcessingException {
         // Create User
         String time = "" + System.currentTimeMillis();
-        String requestBody = "{\n" +
-                "    \"name\": \"Jordan Michael\",\n" +
-                "    \"email\": \"JM"+ time +"@example.com\",\n" +
-                "    \"gender\": \"male\",\n" +
-                "    \"status\": \"active\"\n" +
-                "}";
-        String responseBody = requestSpecification.body(requestBody)
+
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Jordan Michael");
+        data.setEmail("JM" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+        UserResponse responseBody = requestSpecification.body(data)
                 .when().post("users")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(UserResponse.class);
 
         // Get the User ID
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject data = jsonObject.getJSONObject("data");
-        int userID = data.getInt("id");
+        int userID = responseBody.getData().getId();
 
         // Creating post
-        String createPost = "{\n" +
-                "    \"title\": \"Aaron Rodgers is the GOAT\",\n" +
-                "    \"body\": \"Packers beat the Chiefs 35 - 31\"\n" +
-                "}";
-        String postResponseBody = requestSpecification.body(createPost)
+        CreatePostData createPostData = new CreatePostData();
+        createPostData.setTitle("Aaron Rodgers is the GOAT");
+        createPostData.setBody("Packers beat the Chiefs 35-31");
+
+        PostResponse postResponseBody = requestSpecification.body(createPostData)
                 .when().post("users/" + userID + "/posts")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(PostResponse.class);
 
         //get post id
-        JSONObject jsonObject1 = new JSONObject(postResponseBody);
-        JSONObject postData = jsonObject1.getJSONObject("data");
-        int postID = postData.getInt("id");
+        int postID = postResponseBody.getData().getId();
 
         // Create comment
-        String createComment = "{\n" +
-                "    \"name\": \"Joke Looper\",\n" +
-                "    \"email\": \"Joke@example.com\",\n" +
-                "    \"body\": \"Yea he's better than Brady\"\n" +
-                "}";
-        String commentResponseBody = requestSpecification.body(createComment)
+        CreateCommentData commentData = new CreateCommentData();
+        commentData.setName("Jordan Michael");
+        commentData.setEmail("JM" + time + "@example.com");
+        commentData.setBody("Yea he's better than Brady");
+
+        CommentResponse createComment = requestSpecification.body(commentData)
                 .when().post("posts/" + postID + "/comments")
                 .then().spec(responseSpecification).assertThat().statusCode(201)
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("createCommentSchema.json")).extract().response().asString();
+                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("createCommentSchema.json"))
+                .extract().response().as(CommentResponse.class);
+
+        String requestJson = mapper.writeValueAsString(commentData);
+        String responseJson = mapper.writeValueAsString(createComment.getData());
+
+        JSONAssert.assertEquals(requestJson, responseJson,
+                new CustomComparator(JSONCompareMode.STRICT_ORDER,
+                        new Customization("data", new ValueMatcher<Object>() {
+                            @Override
+                            public boolean equal(Object o, Object t1) {
+                                return true;
+                            }
+                        })));
+
     }
 
 
     @Test
-    public void testGetComment() {
+    public void testGetComment() throws JsonProcessingException {
         // Create User
         String time = "" + System.currentTimeMillis();
-        String requestBody = "{\n" +
-                "    \"name\": \"Mike Jack\",\n" +
-                "    \"email\": \"MJ"+ time +"@example.com\",\n" +
-                "    \"gender\": \"male\",\n" +
-                "    \"status\": \"active\"\n" +
-                "}";
-        String responseBody = requestSpecification.body(requestBody)
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Mike Jack");
+        data.setEmail("Mj" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+        UserResponse responseBody = requestSpecification.body(data)
                 .when().post("users")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(UserResponse.class);
 
         // Get the User ID
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject data = jsonObject.getJSONObject("data");
-        int userID = data.getInt("id");
+        int userID = responseBody.getData().getId();
 
         // Creating post
-        String createPost = "{\n" +
-                "    \"title\": \"Aaron Rodgers is the MVP\",\n" +
-                "    \"body\": \"Packers beat the Chiefs 35 - 31\"\n" +
-                "}";
-        String postResponseBody = requestSpecification.body(createPost)
+        CreatePostData createPostData = new CreatePostData();
+        createPostData.setTitle("Aaron Rodgers is the MVP");
+        createPostData.setBody("Packers beat the Chiefs 35 - 31");
+
+        PostResponse postResponseBody = requestSpecification.body(createPostData)
                 .when().post("users/" + userID + "/posts")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(PostResponse.class);
 
         //get post id
-        JSONObject jsonObject1 = new JSONObject(postResponseBody);
-        JSONObject postData = jsonObject1.getJSONObject("data");
-        int postID = postData.getInt("id");
+        int postID = postResponseBody.getData().getId();
 
         // Create comment
-        String createComment = "{\n" +
-                "    \"name\": \"Josh Looper\",\n" +
-                "    \"email\": \"Josh@example.com\",\n" +
-                "    \"body\": \"Best Quarterback to ever play the game\"\n" +
-                "}";
-        String commentResponseBody = requestSpecification.body(createComment)
+        CreateCommentData commentData = new CreateCommentData();
+        commentData.setName("Josh Looper");
+        commentData.setEmail("Josh@example.com");
+        commentData.setBody("Best Quarterback to ever play the game");
+
+        String commentResponseBody = requestSpecification.body(commentData)
                 .when().post("posts/" + postID + "/comments")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
-
-        // Get Comment id
-        JSONObject jsonObject2 = new JSONObject(commentResponseBody);
-        JSONObject commentData = jsonObject2.getJSONObject("data");
-        int commentID = commentData.getInt("post_id");
-
-        // Get Comment
-        String getComments = get("posts/" + commentID + "/comments")
-                .then().assertThat().statusCode(200).body(JsonSchemaValidator.matchesJsonSchemaInClasspath("getCommentSchema.json"))
+                .then().spec(responseSpecification).assertThat().statusCode(201)
                 .extract().response().asString();
 
+        // Get Comment id
+        JSONObject jsonObject = new JSONObject(commentResponseBody);
+        JSONObject data1 = jsonObject.getJSONObject("data");
+        int commentID = data1.getInt("post_id");
+
+        // Get Comment
+        CommentResponse getComments = get("posts/" + commentID + "/comments")
+                .then().assertThat().statusCode(200).body(JsonSchemaValidator.matchesJsonSchemaInClasspath("getCommentSchema.json"))
+                .extract().response().as(CommentResponse.class);
+
+        String requestJson = mapper.writeValueAsString(commentData);
+        String responseJson = mapper.writeValueAsString(getComments.getData());
+
+        JSONAssert.assertEquals(requestJson, responseJson,
+                new CustomComparator(JSONCompareMode.STRICT_ORDER,
+                        new Customization("data", new ValueMatcher<Object>() {
+                            @Override
+                            public boolean equal(Object o, Object t1) {
+                                return true;
+                            }
+                        })));
+
     }
 
     @Test
-    public void testCreateTodo() {
+    public void testCreateTodo() throws JsonProcessingException {
         // Create User
         String time = "" + System.currentTimeMillis();
-        String requestBody = "{\n" +
-                "    \"name\": \"Jordan Michael\",\n" +
-                "    \"email\": \"JM"+ time +"@example.com\",\n" +
-                "    \"gender\": \"male\",\n" +
-                "    \"status\": \"active\"\n" +
-                "}";
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Jordan Michael");
+        data.setEmail("JM" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
 
-        String responseBody = requestSpecification.body(requestBody)
+        UserResponse responseBody = requestSpecification.body(data)
                 .when().post("users")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat()
+                .statusCode(201).extract().response().as(UserResponse.class);
 
         // Get user id
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject data = jsonObject.getJSONObject("data");
-        int userID = data.getInt("id");
+
+        int userID = responseBody.getData().getId();
 
         // Create Todo
-        String todoBody = "{\n" +
-                "    \"title\": \"Take out trash\",\n" +
-                "    \"due_on\": \"2022-01-02\",\n" +
-                "    \"status\": \"completed\"\n" +
-                "}";
-        String response = requestSpecification.body(todoBody)
+        CreateTodoData createTodoData = new CreateTodoData();
+        createTodoData.setTitle("Take out trash");
+        createTodoData.setDue_on("2022-01-02T00:00:00.000+05:30");
+        createTodoData.setStatus("completed");
+
+        TodoResponse response = requestSpecification.body(createTodoData)
                 .when().post("users/" + userID + "/todos")
                 .then().spec(responseSpecification).assertThat().statusCode(201)
-                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("createTodoSchema.json")).extract().response().asString();
+                .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("createTodoSchema.json"))
+                .extract().response().as(TodoResponse.class);
+
+        String requestJson = mapper.writeValueAsString(createTodoData);
+        String responseJson = mapper.writeValueAsString(response.getData());
+
+        JSONAssert.assertEquals(requestJson, responseJson,
+                new CustomComparator(JSONCompareMode.STRICT_ORDER,
+                        new Customization("user_id", new ValueMatcher<Object>() {
+                            @Override
+                            public boolean equal(Object o, Object t1) {
+                                return true;
+                            }
+                        })));
+
     }
 
 
     @Test
-    public void testGetTodo() {
+    public void testGetTodo() throws JsonProcessingException {
         // Create User
         String time = "" + System.currentTimeMillis();
-        String requestBody = "{\n" +
-                "    \"name\": \"Jordy Nelson\",\n" +
-                "    \"email\": \"Jordy"+ time +"@example.com\",\n" +
-                "    \"gender\": \"male\",\n" +
-                "    \"status\": \"active\"\n" +
-                "}";
-        String responseBody = requestSpecification.body(requestBody)
+
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Jordy Nelson");
+        data.setEmail("Jordy" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+        UserResponse responseBody = requestSpecification.body(data)
                 .when().post("users")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().
+                statusCode(201).extract().response().as(UserResponse.class);
 
         // Get the User ID
-        JSONObject jsonObject = new JSONObject(responseBody);
-        JSONObject data = jsonObject.getJSONObject("data");
-        int userID = data.getInt("id");
+        int userID = responseBody.getData().getId();
 
         // Create todo
-        String todoBody = "{\n" +
-                "    \"title\": \"Take out trash\",\n" +
-                "    \"due_on\": \"2022-01-02\",\n" +
-                "    \"status\": \"completed\"\n" +
-                "}";
-        String response2 = requestSpecification.body(todoBody)
+        CreateTodoData createTodoData = new CreateTodoData();
+        createTodoData.setTitle("Take out trash");
+        createTodoData.setDue_on("2022-01-02T00:00:00.000+05:30");
+        createTodoData.setStatus("completed");
+
+        String response2 = requestSpecification.body(createTodoData)
                 .when().post("users/" + userID + "/todos")
-                .then().spec(responseSpecification).assertThat().statusCode(201).extract().response().asString();
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().asString();
 
         JSONObject jsonObject2 = new JSONObject(response2);
         JSONObject data2 = jsonObject2.getJSONObject("data");
         int ToDo_ID = data2.getInt("id");
 
         // Get todo
-        String getTodo = requestSpecification.when().get("todos/" + ToDo_ID)
+        TodoResponse getTodo = requestSpecification.when().get("todos/" + ToDo_ID)
                 .then().spec(responseSpecification).assertThat().statusCode(200).body(JsonSchemaValidator.matchesJsonSchemaInClasspath("getTodoSchema.json"))
-                .extract().response().asString();
+                .extract().response().as(TodoResponse.class);
+
+        String requestJson = mapper.writeValueAsString(createTodoData);
+        String responseJson = mapper.writeValueAsString(getTodo.getData());
+
+        JSONAssert.assertEquals(requestJson, responseJson,
+                new CustomComparator(JSONCompareMode.STRICT_ORDER,
+                        new Customization("user_id", new ValueMatcher<Object>() {
+                            @Override
+                            public boolean equal(Object o, Object t1) {
+                                return true;
+                            }
+                        })));
     }
 
 // Next assignment
