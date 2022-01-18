@@ -18,6 +18,7 @@ import org.skyscreamer.jsonassert.ValueMatcher;
 import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.CDATASection;
 import utils.LoadProperties;
@@ -27,19 +28,8 @@ import java.util.Properties;
 
 import static io.restassured.RestAssured.*;
 
-public class GoRestTest {
+public class GoRestTest extends BaseTest {
 
-    @BeforeTest
-    public void setUp() {
-        String key = LoadProperties.getProperty("Bearer");
-        RestAssured.baseURI = "https://gorest.co.in/public/v1/";
-        RestAssured.requestSpecification = given().header("Accept", "application/json").header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + key)
-                .log().all();
-        RestAssured.responseSpecification = new ResponseSpecBuilder().log(LogDetail.ALL).build();
-    }
-
-    // When there is nobody you can start it with get because of restAssured
     @Test
     public void testListUsers() {
         String responseBody = get("users")
@@ -218,6 +208,8 @@ public class GoRestTest {
         String time = "" + System.currentTimeMillis();
 
         ObjectMapper mapper = new ObjectMapper();
+
+        // Create User
         Data data = new Data();
         data.setName("Jordan Michael");
         data.setEmail("JM" + time + "@example.com");
@@ -230,10 +222,10 @@ public class GoRestTest {
                 .then().spec(responseSpecification).assertThat()
                 .statusCode(201).extract().response().as(UserResponse.class);
 
-
+        // Grab userId
         int userID = responseBody.getData().getId();
 
-
+        // Create Post
         CreatePostData postData = new CreatePostData();
         postData.setTitle("SuperBowl");
         postData.setBody("Packers beat the Chiefs 35 - 31");
@@ -244,9 +236,13 @@ public class GoRestTest {
                 .body(JsonSchemaValidator.matchesJsonSchemaInClasspath("createPostSchema.json")).
                 extract().response().as(PostResponse.class);
 
+        // Converting the post I made into a string
         String requestJson = mapper.writeValueAsString(postData);
+
+        // Converting the response into a string
         String responseJson = mapper.writeValueAsString(createPost.getData());
 
+        // Compares the values to verify
         JSONAssert.assertEquals(requestJson, responseJson,
                 new CustomComparator(JSONCompareMode.STRICT_ORDER,
                         new Customization("user_id", new ValueMatcher<Object>() {
@@ -280,7 +276,7 @@ public class GoRestTest {
         int userID = responseBody.getData().getId();
 
         // Create post
-        CreatePostData createPostData = new CreatePostData();
+        GetPostData createPostData = new GetPostData();
         createPostData.setTitle("Superbowl");
         createPostData.setBody("Packers beat the Chiefs 35 - 31");
 
@@ -290,13 +286,18 @@ public class GoRestTest {
                 .response().as(PostResponse.class);
 
         // GET POST
-        PostResponse getPost = get("users/" + userID + "/posts")
+        GetPostResponse getPost = get("users/" + userID + "/posts")
                 .then().spec(responseSpecification).assertThat()
                 .statusCode(200).body(JsonSchemaValidator.matchesJsonSchemaInClasspath("listPostSchema.json"))
-                .extract().response().as(PostResponse.class);
+                .extract().response().as(GetPostResponse.class);
 
         String requestJson = mapper.writeValueAsString(createPostData);
         String responseJson = mapper.writeValueAsString(getPost.getData());
+
+        System.out.println("------------------------");
+        System.out.println(requestJson);
+        System.out.println(responseJson);
+
         JSONAssert.assertEquals(requestJson, responseJson,
                 new CustomComparator(JSONCompareMode.STRICT_ORDER,
                         new Customization("id", new ValueMatcher<Object>() {
@@ -367,7 +368,6 @@ public class GoRestTest {
                         })));
 
     }
-
 
     @Test
     public void testGetComment() throws JsonProcessingException {
@@ -482,7 +482,6 @@ public class GoRestTest {
 
     }
 
-
     @Test
     public void testGetTodo() throws JsonProcessingException {
         // Create User
@@ -536,7 +535,126 @@ public class GoRestTest {
                         })));
     }
 
-// Next assignment
-    // Create models for each test. Put them in folders to organize them
-    // Make assertions using the data you have and responding data
+    @Test(dataProvider = "createUserFailCases")
+    public void CreateUserFailCases(String name, String email, String gender, String status) throws JsonProcessingException {
+        Data setData = new Data();
+        setData.setName(name);
+        setData.setEmail(email);
+        setData.setGender(gender);
+        setData.setStatus(status);
+
+        String userResponse = requestSpecification.body(setData)
+                .when().post("users")
+                .then().spec(responseSpecification).assertThat().statusCode(422)
+                .log().all().extract()
+                .response().asString();
+    }
+
+    @Test(dataProvider = "createPostFailCases")
+    public void CreatePostFailCases(String title, String body) {
+        String time = "" + System.currentTimeMillis();
+
+
+        // Create User
+        Data data = new Data();
+        data.setName("Jordan Michael");
+        data.setEmail("JM" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+
+        UserResponse responseBody = requestSpecification.body(data)
+                .when().post("users")
+                .then().spec(responseSpecification).assertThat()
+                .statusCode(201).extract().response().as(UserResponse.class);
+
+        // Grab userId
+        int userID = responseBody.getData().getId();
+
+        CreatePostData postData = new CreatePostData();
+        postData.setTitle(title);
+        postData.setBody(body);
+
+        String userResponse = requestSpecification.body(postData)
+                .when().post("users/" + userID + "/posts")
+                .then().spec(responseSpecification).assertThat().statusCode(422)
+                .log().all().extract().response().asString();
+    }
+
+    @Test (dataProvider = "createCommentFailCases")
+    public void CreateCommentFailCases(String name, String email, String comment) throws JsonProcessingException {
+        // Create User
+        String time = "" + System.currentTimeMillis();
+
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Jordan Michael");
+        data.setEmail("JM" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+        UserResponse responseBody = requestSpecification.body(data)
+                .when().post("users")
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(UserResponse.class);
+
+        // Get the User ID
+        int userID = responseBody.getData().getId();
+
+        // Creating post
+        CreatePostData createPostData = new CreatePostData();
+        createPostData.setTitle("Aaron Rodgers is the GOAT");
+        createPostData.setBody("Packers beat the Chiefs 35-31");
+
+        PostResponse postResponseBody = requestSpecification.body(createPostData)
+                .when().post("users/" + userID + "/posts")
+                .then().spec(responseSpecification).assertThat().statusCode(201)
+                .extract().response().as(PostResponse.class);
+
+        //get post id
+        int postID = postResponseBody.getData().getId();
+
+        // Create comment
+        CreateCommentData commentData = new CreateCommentData();
+        commentData.setName(name);
+        commentData.setEmail(email);
+        commentData.setBody(comment);
+
+        String createComment = requestSpecification.body(commentData)
+                .when().post("posts/" + postID + "/comments")
+                .then().spec(responseSpecification).assertThat().statusCode(422)
+                .extract().response().asString();
+
+    }
+
+    @Test (dataProvider = "createTodoFailCases")
+    public void CreateTodoFailCases(String title, String due_on, String status) {
+        // Create User
+        String time = "" + System.currentTimeMillis();
+        ObjectMapper mapper = new ObjectMapper();
+        Data data = new Data();
+        data.setName("Jordan Michael");
+        data.setEmail("JM" + time + "@example.com");
+        data.setGender("male");
+        data.setStatus("active");
+
+        UserResponse responseBody = requestSpecification.body(data)
+                .when().post("users")
+                .then().spec(responseSpecification).assertThat()
+                .statusCode(201).extract().response().as(UserResponse.class);
+
+        // Get user id
+        int userID = responseBody.getData().getId();
+
+        CreateTodoData createTodoData = new CreateTodoData();
+        createTodoData.setTitle(title);
+        createTodoData.setDue_on(due_on);
+        createTodoData.setStatus(status);
+
+        String response = requestSpecification.body(createTodoData)
+                .when().post("users/" + userID + "/todos")
+                .then().spec(responseSpecification).assertThat().statusCode(422)
+                .extract().response().asString();
+    }
+
 }
